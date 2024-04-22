@@ -103,7 +103,7 @@ model = Model()
 app = FastAPI()
 
 @app.post("/ping")
-async def test_ping(req: Request) -> Response:
+async def test_ping(req: Request) -> PingResponse:
     base64 = req.base64
     return PingResponse(text=base64)
 
