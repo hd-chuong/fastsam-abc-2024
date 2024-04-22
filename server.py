@@ -23,6 +23,9 @@ class Response(BaseModel):
     sticker: str
     image_with_boundary: str
 
+class PingResponse(BaseModel):
+    text: str
+
 
 class Model:
     # FastSAM x model: 138MB
@@ -102,7 +105,7 @@ app = FastAPI()
 @app.post("/ping")
 async def test_ping(req: Request) -> Response:
     base64 = req.base64
-    return Response(text=base64)
+    return PingResponse(text=base64)
 
 
 @app.post("/sticker")
