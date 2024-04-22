@@ -3,14 +3,25 @@ import cv2
 from fastapi import FastAPI
 from pydantic import BaseModel
 import numpy as np
+from PIL import Image
+import io
+import base64
+# Take in base64 string and return PIL image
+def stringToImage(base64_string):
+    imgdata = base64.b64decode(base64_string)
+    return Image.open(io.BytesIO(imgdata))
 
+# convert PIL Image to an RGB image( technically a numpy array ) that's compatible with opencv
+def toRGB(image):
+    return cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
 
 class Request(BaseModel):
     base64: str
-    link: str
+
 
 class Response(BaseModel):
-    text: str
+    sticker: str
+    image_with_boundary: str
 
 
 class Model:
@@ -18,7 +29,7 @@ class Model:
     STATIC_MODEL_X = FastSAM('FastSAM-x.pt')
 
     def __init__(self):
-        self.__dump_temp = 'dump.png'
+        self.__dump_temp_dir = 'temp_dump.png'
         
     def generate_binary_mask_(self, link):
         image = cv2.imread(link)      
@@ -45,7 +56,7 @@ class Model:
         object_only = image * binary_mask[..., np.newaxis]
         return np.dstack((object_only, binary_mask*255))
     
-    def draw_boundary_(self, image, binary_mask):
+    def draw_boundary_and_encode_(self, image, binary_mask):
         sihoutte = np.array(np.dstack((binary_mask * 255, binary_mask * 255,  binary_mask* 255)), dtype=np.uint8)
         gray = cv2.cvtColor(sihoutte, cv2.COLOR_BGR2GRAY) 
         
@@ -61,31 +72,32 @@ class Model:
         image_with_contours = cv2.drawContours(image, contours, -1, GREY_RGB_CODE, 1)
         
         cv2.imwrite("../output/mask.png", image)
-        return sihoutte 
+        return base64.b64encode(image)
 
-    def infer(self, link):
-        image = cv2.imread(link)      
+    def infer(self, image):
+        cv2.imwrite(self.__dump_temp_dir, image)
+    
         height, width = image.shape[0], image.shape[1]
         
         # generate binary mask
         print("LOG - calculate the binary mask:")
-        binary_mask = self.generate_binary_mask_(link)
+        binary_mask = self.generate_binary_mask_(self.__dump_temp_dir)
         
         # generate image with the extracted object
         print("LOG - generate new image:")
-        image_with_transparent_background = self.extract_object_(image, binary_mask)
+        sticker = self.extract_object_(image, binary_mask)
         
         # generate the boundary
-        self.draw_boundary_(image, binary_mask)
+        original_with_boundary = self.draw_boundary_and_encode_(image, binary_mask)
 
         # TODO: might need to return the base64 data back
         print("LOG - save image")
-        return cv2.imwrite("../output/output.png", image_with_transparent_background)
+        cv2.imwrite("../output/output_sticker.png", sticker)
+        return base64.b64encode(sticker), original_with_boundary
 
 
 model = Model()
 app = FastAPI()
-
 
 @app.post("/ping")
 async def test_ping(req: Request) -> Response:
@@ -96,5 +108,8 @@ async def test_ping(req: Request) -> Response:
 @app.post("/sticker")
 async def generate_sticker(req: Request) -> Response:
     base64 = req.base64
-    link = req.link 
-    return Response(text="true" if model.infer(link) == True else "false")
+    print(base64)
+    image = toRGB(stringToImage(base64))
+    encoded_sticker, encoded_image_with_boundary = model.infer(image)
+
+    return Response(sticker=encoded_sticker,image_with_boundary=encoded_image_with_boundary)
