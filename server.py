@@ -20,13 +20,10 @@ class Model:
     def __init__(self):
         self.__dump_temp = 'dump.png'
         
-
-    def infer(self, link):
-        image = cv2.imread(link)
-      
-        height = image.shape[0]
-        width = image.shape[1]
-      
+    def generate_binary_mask_(self, link):
+        image = cv2.imread(link)      
+        height, width = image.shape[0], image.shape[1]
+        
         # TODO: might need to save the image locally as 
         # later the base64 might be received instead of the image link.
         model = Model.STATIC_MODEL_X(link,
@@ -45,13 +42,29 @@ class Model:
 
         binary_mask = np.where(ann > 0.5, 1, 0)
 
+        return binary_mask[0]
 
+    def extract_object_(self, image, binary_mask):
+        object_only = image * binary_mask[..., np.newaxis]
+        return np.dstack((object_only, binary_mask*255))
+    
+    def infer(self, link):
+        image = cv2.imread(link)      
+        height, width = image.shape[0], image.shape[1]
+        
+        # generate binary mask
+        print("LOG - calculate the binary mask:")
+        binary_mask = self.generate_binary_mask_(link)
+        
+        # generate image with the extracted object
         print("LOG - generate new image:")
-        print(binary_mask[0])
-        new_image = image * binary_mask[0][..., np.newaxis]
-        image_with_transparent_background = np.dstack((new_image, binary_mask[0]*255))
+        image_with_transparent_background = self.extract_object_(image, binary_mask)
+        
+        # generate the boundary
+        cv2.imwrite("../output/mask.png", np.dstack((binary_mask*255, binary_mask*255, binary_mask*255)))
+
         # TODO: might need to return the base64 data back
-        print("LOG - save segmentation data")
+        print("LOG - save image")
         return cv2.imwrite("../output/output.png", image_with_transparent_background)
 
 
@@ -70,4 +83,3 @@ async def generate_sticker(req: Request) -> Response:
     base64 = req.base64
     link = req.link 
     return Response(text="true" if model.infer(link) == True else "false")
-
