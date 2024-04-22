@@ -36,18 +36,33 @@ class Model:
                                        model,
                                        device='cpu')
 
-
         print("LOG - calculate annotation")
         ann = prompt_process.point_prompt(points=[[int(width/2),int(height/2)]], pointlabel=[1])
-
         binary_mask = np.where(ann > 0.5, 1, 0)
-
         return binary_mask[0]
 
     def extract_object_(self, image, binary_mask):
         object_only = image * binary_mask[..., np.newaxis]
         return np.dstack((object_only, binary_mask*255))
     
+    def draw_boundary_(self, image, binary_mask):
+        sihoutte = np.array(np.dstack((binary_mask * 255, binary_mask * 255,  binary_mask* 255)), dtype=np.uint8)
+        gray = cv2.cvtColor(sihoutte, cv2.COLOR_BGR2GRAY) 
+        
+        # Find Canny edges 
+        edged = cv2.Canny(gray, 30, 200) 
+        cv2.waitKey(0) 
+        
+        # Finding Contours 
+        # Use a copy of the image e.g. edged.copy() 
+        # since findContours alters the image 
+        contours, hierarchy = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
+        GREY_RGB_CODE = (100, 100, 100)
+        image_with_contours = cv2.drawContours(image, contours, -1, GREY_RGB_CODE, 1)
+        
+        cv2.imwrite("../output/mask.png", image)
+        return sihoutte 
+
     def infer(self, link):
         image = cv2.imread(link)      
         height, width = image.shape[0], image.shape[1]
@@ -61,7 +76,7 @@ class Model:
         image_with_transparent_background = self.extract_object_(image, binary_mask)
         
         # generate the boundary
-        cv2.imwrite("../output/mask.png", np.dstack((binary_mask*255, binary_mask*255, binary_mask*255)))
+        self.draw_boundary_(image, binary_mask)
 
         # TODO: might need to return the base64 data back
         print("LOG - save image")
