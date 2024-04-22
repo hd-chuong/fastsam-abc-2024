@@ -19,7 +19,6 @@ class Model:
 
     def __init__(self):
         self.__dump_temp = 'dump.png'
-        
 
     def infer(self, link):
         image = cv2.imread(link)
@@ -44,13 +43,10 @@ class Model:
         ann = prompt_process.point_prompt(points=[[int(width/2),int(height/2)]], pointlabel=[1])
 
         binary_mask = np.where(ann > 0.5, 1, 0)
-
-
         print("LOG - generate new image:")
-        print(binary_mask[0])
         new_image = image * binary_mask[0][..., np.newaxis]
+    
         alpha = np.sum(new_image, axis=-1) > 0
-
         # Convert True/False to 0/255 and change type to "uint8" to match "na"
         alpha = np.uint8(alpha * 255)
         image_with_transparent_background = np.dstack((new_image,alpha ))
