@@ -22,12 +22,11 @@ class Model:
         
 
     def infer(self, link):
-        image = cv2.cvtColor(cv2.imread(link),
-                                    cv2.COLOR_BGR2RGB)
-        print("shape: ", image.shape) 
+        image = cv2.imread(link)
+      
         height = image.shape[0]
         width = image.shape[1]
-        print("height: ", height/2, " width: ", width/2)
+      
         # TODO: might need to save the image locally as 
         # later the base64 might be received instead of the image link.
         model = Model.STATIC_MODEL_X(link,
@@ -45,15 +44,19 @@ class Model:
         ann = prompt_process.point_prompt(points=[[int(width/2),int(height/2)]], pointlabel=[1])
 
         binary_mask = np.where(ann > 0.5, 1, 0)
-        white_background = np.ones_like(image) * 255
 
-        print("LOG - generate new image")
-        new_image = white_background * (1 - binary_mask[0][
-            ..., np.newaxis]) + image * binary_mask[0][..., np.newaxis]
 
+        print("LOG - generate new image:")
+        print(binary_mask[0])
+        new_image = image * binary_mask[0][..., np.newaxis]
+        alpha = np.sum(new_image, axis=-1) > 0
+
+        # Convert True/False to 0/255 and change type to "uint8" to match "na"
+        alpha = np.uint8(alpha * 255)
+        image_with_transparent_background = np.dstack((new_image,alpha ))
         # TODO: might need to return the base64 data back
         print("LOG - save segmentation data")
-        return cv2.imwrite("../output/output.jpeg", new_image)
+        return cv2.imwrite("../output/output.png", image_with_transparent_background)
 
 
 model = Model()
