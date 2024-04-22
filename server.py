@@ -24,22 +24,25 @@ class Model:
     def infer(self, link):
         image = cv2.cvtColor(cv2.imread(link),
                                     cv2.COLOR_BGR2RGB)
-        
+        print("shape: ", image.shape) 
+        height = image.shape[0]
+        width = image.shape[1]
+        print("height: ", height/2, " width: ", width/2)
         # TODO: might need to save the image locally as 
         # later the base64 might be received instead of the image link.
-        everything_results = Model.STATIC_MODEL_X(link,
+        model = Model.STATIC_MODEL_X(link,
                                                   device='cpu',
                                                   retina_masks=True,
                                                   imgsz=1024,
                                                   conf=0.4,
                                                   iou=0.9)
         prompt_process = FastSAMPrompt(link,
-                                       everything_results,
+                                       model,
                                        device='cpu')
 
-        # Temporarily use segment everything prompt
+
         print("LOG - calculate annotation")
-        ann = prompt_process.everything_prompt()
+        ann = prompt_process.point_prompt(points=[[int(width/2),int(height/2)]], pointlabel=[1])
 
         binary_mask = np.where(ann > 0.5, 1, 0)
         white_background = np.ones_like(image) * 255
@@ -66,5 +69,6 @@ async def test_ping(req: Request) -> Response:
 @app.post("/sticker")
 async def generate_sticker(req: Request) -> Response:
     base64 = req.base64
-    return Response(text="true" if model.infer(base64) == True else "false")
+    link = req.link 
+    return Response(text="true" if model.infer(link) == True else "false")
 
