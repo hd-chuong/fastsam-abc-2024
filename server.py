@@ -99,8 +99,8 @@ class Model:
         # TODO: might need to return the base64 data back
         print("LOG - save image")
         cv2.imwrite(self.__sticker_output_dir, sticker)
-        # return base64.b64encode(sticker), original_with_boundary
-        return GLOBAL_STICKER_PATH, GLOBAL_BOUNDARY_PATH
+        return base64.b64encode(sticker),  original_with_boundary
+        # return GLOBAL_STICKER_PATH, GLOBAL_BOUNDARY_PATH
 
 model = Model()
 app = FastAPI()
@@ -110,12 +110,20 @@ async def test_ping(req: Request) -> Response:
     base64 = req.base64
     return Response(text=base64)
 
+@app.post("/sticker-path")
+async def generate_sticker_path(req: Request) -> Response:
+    encoded_input = req.base64
 
-@app.post("/sticker")
+    image = toRGB(stringToImage(encoded_input))
+    _, __ = model.infer(image)
+
+    return Response(sticker=GLOBAL_STICKER_PATH,image_with_boundary=GLOBAL_BOUNDARY_PATH)
+
+@app.post("/sticker-data")
 async def generate_sticker(req: Request) -> Response:
-    base64 = req.base64
+    encoded_input = req.base64
      
-    image = toRGB(stringToImage(base64))
-    sticker_path, boundary_path = model.infer(image)
+    image = toRGB(stringToImage(encoded_input))
+    sticker, boundary = model.infer(image)
 
-    return Response(sticker=sticker_path,image_with_boundary=boundary_path)
+    return Response(sticker=sticker,image_with_boundary=boundary)
