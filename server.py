@@ -96,13 +96,13 @@ class Model:
         # generate image with the extracted object
         print("LOG - generate new image:")
         sticker = self.extract_object_(image, binary_mask)
-
+        
+        # generate the boundary
+        original_with_boundary = self.draw_boundary_and_encode_(image, binary_mask)
+        
         # TODO: might need to return the base64 data back
         print("LOG - save image")
         cv2.imwrite(self.__sticker_output_dir, sticker)
-        
-        # generate the boundary
-        original_with_boundary = self.draw_boundary_and_encode_(sticker[0:3], binary_mask)
 
         tempo = ""
         with open(self.__sticker_output_dir, "rb") as f:
