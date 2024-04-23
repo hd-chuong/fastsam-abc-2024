@@ -75,7 +75,7 @@ class Model:
         # since findContours alters the image 
         contours, hierarchy = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
         GREY_RGB_CODE = (100, 100, 100)
-        image_with_contours = cv2.drawContours(image, contours, -1, GREY_RGB_CODE, 1)
+        image_with_contours = cv2.drawContours(image, contours, -1, GREY_RGB_CODE, 4)
         
         cv2.imwrite(self.__boundary_output_dir, image)
         return base64.b64encode(image)
