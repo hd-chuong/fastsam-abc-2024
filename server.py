@@ -102,7 +102,7 @@ class Model:
         cv2.imwrite(self.__sticker_output_dir, sticker)
         
         # generate the boundary
-        original_with_boundary = self.draw_boundary_and_encode_(sticker, binary_mask)
+        original_with_boundary = self.draw_boundary_and_encode_(sticker[0:3], binary_mask)
 
         tempo = ""
         with open(self.__sticker_output_dir, "rb") as f:
