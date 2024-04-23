@@ -7,6 +7,8 @@ from PIL import Image
 import io
 import base64
 
+GLOBAL_STICKER_PATH = "/home/chronos/user/Downloads/output/sticker.png"
+GLOBAL_BOUNDARY_PATH = "/home/chronos/user/Downloads/boundary.png"
 
 # Take in base64 string and return PIL image
 def stringToImage(base64_string):
@@ -24,9 +26,6 @@ class Request(BaseModel):
 class Response(BaseModel):
     sticker: str
     image_with_boundary: str
-
-class PingResponse(BaseModel):
-    text: str
 
 
 class Model:
@@ -101,15 +100,15 @@ class Model:
         print("LOG - save image")
         cv2.imwrite(self.__sticker_output_dir, sticker)
         # return base64.b64encode(sticker), original_with_boundary
-        return self.__sticker_output_dir, self.__boundary_output_dir
+        return GLOBAL_STICKER_PATH, GLOBAL_BOUNDARY_PATH
 
 model = Model()
 app = FastAPI()
 
 @app.post("/ping")
-async def test_ping(req: Request) -> PingResponse:
+async def test_ping(req: Request) -> Response:
     base64 = req.base64
-    return PingResponse(text=base64)
+    return Response(text=base64)
 
 
 @app.post("/sticker")
