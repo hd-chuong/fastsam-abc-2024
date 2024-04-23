@@ -74,7 +74,7 @@ class Model:
         # Use a copy of the image e.g. edged.copy() 
         # since findContours alters the image 
         contours, hierarchy = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
-        GREY_RGB_CODE = (100, 100, 100)
+        GREY_RGB_CODE = (100, 100, 100, 255)
         image_with_contours = cv2.drawContours(image, contours, -1, GREY_RGB_CODE, 4)
         
         cv2.imwrite(self.__boundary_output_dir, image)
@@ -102,7 +102,7 @@ class Model:
         cv2.imwrite(self.__sticker_output_dir, sticker)
         
         # generate the boundary
-        original_with_boundary = self.draw_boundary_and_encode_(cv2.imread(self.__sticker_output_dir), binary_mask)
+        original_with_boundary = self.draw_boundary_and_encode_(cv2.imread(self.__sticker_output_dir, cv2.IMREAD_UNCHANGED), binary_mask)
 
         tempo = ""
         with open(self.__sticker_output_dir, "rb") as f:
