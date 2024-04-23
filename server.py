@@ -8,7 +8,7 @@ import io
 import base64
 
 GLOBAL_STICKER_PATH = "/home/chronos/user/Downloads/output/sticker.png"
-GLOBAL_BOUNDARY_PATH = "/home/chronos/user/Downloads/boundary.png"
+GLOBAL_BOUNDARY_PATH = "/home/chronos/user/Downloads/output/boundary.png"
 
 # Take in base64 string and return PIL image
 def stringToImage(base64_string):
