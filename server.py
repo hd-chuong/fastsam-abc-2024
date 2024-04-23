@@ -78,8 +78,12 @@ class Model:
         image_with_contours = cv2.drawContours(image, contours, -1, GREY_RGB_CODE, 4)
         
         cv2.imwrite(self.__boundary_output_dir, image)
-        return base64.b64encode(image)
+        tempo = ""
+        with open(self.__boundary_output_dir, "rb") as f:
+            tempo = base64.b64encode(f.read())
 
+        return tempo
+    
     def infer(self, image):
         cv2.imwrite(self.__dump_temp_dir, image)
     
@@ -99,7 +103,11 @@ class Model:
         # TODO: might need to return the base64 data back
         print("LOG - save image")
         cv2.imwrite(self.__sticker_output_dir, sticker)
-        return base64.b64encode(sticker),  original_with_boundary
+
+        tempo = ""
+        with open(self.__sticker_output_dir, "rb") as f:
+            tempo = base64.b64encode(f.read())
+        return tempo,  original_with_boundary
         # return GLOBAL_STICKER_PATH, GLOBAL_BOUNDARY_PATH
 
 model = Model()
