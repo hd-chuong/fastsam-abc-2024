@@ -6,6 +6,8 @@ import numpy as np
 from PIL import Image
 import io
 import base64
+
+
 # Take in base64 string and return PIL image
 def stringToImage(base64_string):
     imgdata = base64.b64decode(base64_string)
@@ -33,7 +35,9 @@ class Model:
 
     def __init__(self):
         self.__dump_temp_dir = 'temp_dump.png'
-        
+        self.__sticker_output_dir = '/mnt/chromeos/MyFiles/Downloads/output/sticker.png'
+        self.__boundary_output_dir = '/mnt/chromeos/MyFiles/Downloads/output/boundary.png'
+    
     def generate_binary_mask_(self, link):
         image = cv2.imread(link)      
         height, width = image.shape[0], image.shape[1]
@@ -74,7 +78,7 @@ class Model:
         GREY_RGB_CODE = (100, 100, 100)
         image_with_contours = cv2.drawContours(image, contours, -1, GREY_RGB_CODE, 1)
         
-        cv2.imwrite("../output/mask.png", image)
+        cv2.imwrite(self.__boundary_output_dir, image)
         return base64.b64encode(image)
 
     def infer(self, image):
@@ -95,9 +99,9 @@ class Model:
 
         # TODO: might need to return the base64 data back
         print("LOG - save image")
-        cv2.imwrite("../output/output_sticker.png", sticker)
-        return base64.b64encode(sticker), original_with_boundary
-
+        cv2.imwrite(self.__sticker_output_dir, sticker)
+        # return base64.b64encode(sticker), original_with_boundary
+        return self.__sticker_output_dir, self.__boundary_output_dir
 
 model = Model()
 app = FastAPI()
@@ -111,8 +115,8 @@ async def test_ping(req: Request) -> PingResponse:
 @app.post("/sticker")
 async def generate_sticker(req: Request) -> Response:
     base64 = req.base64
-    print(base64)
+     
     image = toRGB(stringToImage(base64))
-    encoded_sticker, encoded_image_with_boundary = model.infer(image)
+    sticker_path, boundary_path = model.infer(image)
 
-    return Response(sticker=encoded_sticker,image_with_boundary=encoded_image_with_boundary)
+    return Response(sticker=sticker_path,image_with_boundary=boundary_path)
